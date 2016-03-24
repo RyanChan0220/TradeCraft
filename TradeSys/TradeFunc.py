@@ -2,9 +2,15 @@ __author__ = 'ryan'
 
 OrderType = {"Market": 0, "Limit": 1}
 
-
+#InFunc 获取一个订单号
+@staticmethod
 def trade_get_order_id():
     pass
+    return 0
+
+
+#OutFunc 获取当前订单状态，0代表未成交，1代表成交
+def trade_get_order_status(order_id):
     return 0
 
 
