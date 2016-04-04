@@ -9,6 +9,13 @@ orders = collections.OrderedDict()
 orders_count = 0
 
 
+def tradelogic_get_order_status(order_id):
+    if order_id in orders:
+        return orders[order_id]
+    else:
+        return None
+
+
 def tradelogic_get_order_id():
     global orders_count
     ret = orders_count
@@ -30,6 +37,10 @@ def tradelogic_is_bargaining(stock_id):
 
 
 def tradelogic_transaction_submit(order_id, stock_id, amount, price):
+    #check stock status
+    if tradelogic_is_bargaining(stock_id) is False:
+        return OrderStatus["Cancel"]
+    #check amount
     if amount >= 0:
         pass
     else:
