@@ -75,6 +75,14 @@ def trade_change_stock_amount(stock_id, amount):
     return amount
 
 
+def trade_get_stock_amount(id):
+    stock_id = trade_id2stockid(id)
+    if stock_id in StockAmount:
+        return StockAmount[stock_id]
+    else:
+        return 0
+
+
 def trade_order_shares(id, shares, style=OrderType["Market"], limit_price=0):
     stock_id = trade_id2stockid(id)
     #check id
@@ -93,13 +101,13 @@ def trade_order_shares(id, shares, style=OrderType["Market"], limit_price=0):
     need_money = price*shares
     if trade_is_money_enough(need_money) is False:
         return None
-    #get order id
-    order_id = tradelogic_get_order_id()
-    status = tradelogic_transaction_submit(order_id, stock_id, shares, price)
-    if status == OrderStatus["Dealed"]:
+    #submit
+    order_id = tradelogic_transaction_submit(stock_id, shares, price)
+    status = tradelogic_get_order_status(order_id)
+    if status == OrderStatus["Deal"]:
         dealed_amount = trade_change_stock_amount(stock_id, shares)
         trade_use_money(price*dealed_amount)
-    elif status == OrderStatus["Submited"]:
+    elif status == OrderStatus["Submit"]:
         pass
     else:
         pass
@@ -121,7 +129,7 @@ def trade_order_value(id, cash_amount, style=OrderType["Market"], limit_price=0)
     return trade_order_shares(id, shares, style, limit_price)
 
 
-def trade_order_percent(id, percent, style = OrderType["Market"], limit_price=0):
+def trade_order_percent(id, percent, style=OrderType["Market"], limit_price=0):
     order_id = None
     if (percent < 1) and (percent > -1):
         all_money = trade_get_start_money()
@@ -131,21 +139,24 @@ def trade_order_percent(id, percent, style = OrderType["Market"], limit_price=0)
     return order_id
 
 
-def trade_order_target_value(id, target_cash, style = OrderType["Market"], limit_price=0):
-    order_id = tradelogic_get_order_id()
-    pass
-    return order_id
+def trade_order_target_value(id, target_cash, style=OrderType["Market"], limit_price=0):
+    stock_amount = trade_get_stock_amount(id)
+    stock_id = trade_id2stockid(id)
+    price = tradelogic_get_price(stock_id)
+    return trade_order_value(id, target_cash-(stock_amount*price), style, limit_price)
 
 
-def trade_order_target_percent(id, target_percent, style = OrderType["Market"], limit_price=0):
-    order_id = tradelogic_get_order_id()
-    pass
-    return order_id
+def trade_order_target_percent(id, target_percent, style=OrderType["Market"], limit_price=0):
+    stock_amount = trade_get_stock_amount(id)
+    stock_id = trade_id2stockid(id)
+    price = tradelogic_get_price(stock_id)
+    all_money = trade_get_start_money()
+    target_cash = all_money*target_percent
+    return trade_order_target_value(id, target_cash-(stock_amount*price), style, limit_price)
 
 
 def trade_cancel_order(order_id):
-    pass
-    return 0
+    return tradelogic_delete_order(order_id)
 
 
 def trade_get_order(order_id):

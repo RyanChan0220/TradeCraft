@@ -1,48 +1,99 @@
 __author__ = 'ryan'
 
 import collections
-from BackTestSys.BackTest import back_get_timer_now
+from BackTestSys.BackTest import *
 from TradeSys.TradeSQL import *
+from TradeFunc import log_trade
+import datetime
+import math
 
-OrderStatus = {"Cancel": 0, "Dealed": 1, "Submited": 2}
-orders = collections.OrderedDict()
-orders_count = 0
+OrderStatus = {"Empty": 0, "Deal": 1, "Submit": 2, "Cancel": 3}
+Orders = collections.OrderedDict()
+StartTime = back_get_start_time()
+
+
+def tradelogic_set_start_time(start_time):
+    StartTime = start_time
+
+
+def tradelogic_cycle():
+    #check orders
+    # TODO 交易精度为1分钟
+    tradelogic_cycle.count += 1
+    time_now = StartTime + datetime.timedelta(minutes=tradelogic_cycle.count)
+    log_trade.info("tradelogic %s" + str(time_now))
+tradelogic_cycle.count = 0
 
 
 def tradelogic_get_order_status(order_id):
-    if order_id in orders:
-        return orders[order_id]
+    if order_id in Orders:
+        return Orders[order_id]
     else:
-        return None
+        return OrderStatus["Empty"]
 
 
-def tradelogic_get_order_id():
-    global orders_count
-    ret = orders_count
-    orders[orders_count] = ()
-    orders_count += 1
-    return ret
+def tradelogic_set_order_status(order_id, status=OrderStatus["Empty"]):
+    if order_id in Orders:
+        Orders[order_id] = status
+    else:
+        pass
 
 
-#TODO 交易精度为1分钟
+def __tradelogic_get_order_id__():
+    Orders[__tradelogic_get_order_id__.count] = OrderStatus["Empty"]
+    __tradelogic_get_order_id__.count += 1
+    return __tradelogic_get_order_id__.count
+__tradelogic_get_order_id__.count = 0
+
+
 def tradelogic_get_price(stock_id):
     now = back_get_timer_now()
-    price = tradesql_get_now_price_by_date(stock_id, now)
+    price = tradesql_get_minute_open_price_by_date(stock_id, now)
     return price
 
 
 def tradelogic_is_bargaining(stock_id):
-    pass
-    return True
+    now = back_get_timer_now()
+    trans_shares = tradesql_get_minute_amount_by_date(stock_id, now)
+    if trans_shares > 1:
+        return True
+    else:
+        return False
 
 
-def tradelogic_transaction_submit(order_id, stock_id, amount, price):
+def tradelogic_transaction_submit(stock_id, amount, price):
     #check stock status
     if tradelogic_is_bargaining(stock_id) is False:
-        return OrderStatus["Cancel"]
-    #check amount
-    if amount >= 0:
+        log_trade.info("tradelogic: %s is NOT in bargaining!", stock_id)
+        return None
+    #check price
+    if price > 0:
         pass
     else:
-        pass
-    return OrderStatus["Dealed"]
+        log_trade.error("tradelogic: the price %f of %s is INVALID!", price, stock_id)
+        return None
+    now = back_get_timer_now()
+    order_id = __tradelogic_get_order_id__()
+    #是否达成成交判断方法：提交价格需要在最高价格和最低价格之间，且成交量小于等于1分钟全部成交量的10%
+    top_price = tradesql_get_minute_top_price_by_date(stock_id, now)
+    low_price = tradesql_get_minute_low_price_by_date(stock_id, now)
+    minute_amount = tradesql_get_minute_amount_by_date(stock_id, now)
+    if math.abs(amount) <= minute_amount*0.1:
+        if (price > low_price) and (price < top_price):
+            tradelogic_set_order_status(order_id, OrderStatus["Deal"])
+        else:
+            tradelogic_set_order_status(order_id, OrderStatus["Submit"])
+    else:
+        tradelogic_set_order_status(order_id, OrderStatus["Submit"])
+    return order_id
+
+
+def tradelogic_delete_order(order_id):
+    status = tradelogic_get_order_status(order_id)
+    if status == OrderStatus["Submit"]:
+        tradelogic_set_order_status(order_id, OrderStatus["Cancel"])
+        log_trade.info("tradelogic: order_id: %s Deleted", order_id)
+        return True
+    else:
+        log_trade.info("tradelogic: order_id: %s is in status %d, can NOT Delete", order_id, status)
+        return False
