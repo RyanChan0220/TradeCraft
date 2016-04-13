@@ -18,7 +18,7 @@ def tradelogic_set_start_time(start_time):
 
 def tradelogic_cycle():
     #check orders
-    # TODO 交易精度为1分钟
+    # TODO trade accuracy is 1 minute
     tradelogic_cycle.count += 1
     time_now = StartTime + datetime.timedelta(minutes=tradelogic_cycle.count)
     log_trade.info("tradelogic %s" + str(time_now))
@@ -74,7 +74,9 @@ def tradelogic_transaction_submit(stock_id, amount, price):
         return None
     now = back_get_timer_now()
     order_id = __tradelogic_get_order_id__()
-    #是否达成成交判断方法：提交价格需要在最高价格和最低价格之间，且成交量小于等于1分钟全部成交量的10%
+    """the judgement of whether transaction is deal:
+        condition1: submite price is between the top and the low price
+        condition2: the amount is less than 10% of all 1 minute amount"""
     top_price = tradesql_get_minute_top_price_by_date(stock_id, now)
     low_price = tradesql_get_minute_low_price_by_date(stock_id, now)
     minute_amount = tradesql_get_minute_amount_by_date(stock_id, now)
