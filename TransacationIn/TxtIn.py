@@ -33,6 +33,20 @@ class TXT2DB(object):
             pool.close()
             pool.join()
 
+    def minute2db_multi(self):
+        pool = ThreadPool(fork_processing)
+        try:
+            for root, dirs, files in os.walk(self.path):
+                files_low = []
+                for file_name in files:
+                    files_low.append(file_name.lower())
+                ret = pool.map(self.minute_file2db, files_low)
+        except Exception, e:
+            print e
+        finally:
+            pool.close()
+            pool.join()
+
     def daily_file2db(self, stock_name):
         mysql = MySQL(self.db_name)
         mysql.connect()
@@ -91,12 +105,8 @@ class TXT2DB(object):
                 full_file_name = join(self.path, stock_name)
                 txt_file = open(full_file_name)
                 stock_name = txt_file.readline().decode('gbk').encode('utf-8')
-                # for str in stock_name.split(" ", 3):
-                # print str.lstrip().rstrip()
                 title = txt_file.readline().decode('gbk').encode('utf-8')
-                # for str in title.lstrip().split("\t", 7):
-                # print str.lstrip()
-                print "Processing daily to DB File: %s" % stock_name.lstrip().rstrip()
+                print "Processing minute to DB File: %s" % stock_name.lstrip().rstrip()
                 col_type = list()
                 col_type.append("`ID` INT NOT NULL AUTO_INCREMENT")
                 col_type.append("`DATE` DATETIME NULL")
@@ -108,20 +118,29 @@ class TXT2DB(object):
                 col_type.append("`TURN` FLOAT NULL")
                 mysql.create_table_with_delete(table_name, "ID", col_type)
                 content = txt_file.readline()
-                data = list()
+                datas = []
                 while content:
                     content = content.replace('\n', '')
-                    contents = content.split(';', 7)
-                    content = txt_file.readline()
-                    if len(contents) < 7:
-                        continue
+                    contents = content.split(';', 8)
+                    if len(contents) < 8:
+                        print "error line: " + content
                     else:
                         self.my_lock.acquire()
-                        contents[0] = datetime.strptime(contents[0], "%m/%d/%Y").strftime("%Y-%m-%d %H:%M:%S")
+                        contents[0] = datetime.strptime(contents[0]+";"+contents[1][0:2]+":"+contents[1][2:4],
+                                                        "%m/%d/%Y;%H:%M").strftime("%Y-%m-%d %H:%M:%S")
                         self.my_lock.release()
-                        data.append(contents)
+                        data = list()
+                        data.append(contents[0])
+                        data.append(contents[2])
+                        data.append(contents[3])
+                        data.append(contents[4])
+                        data.append(contents[5])
+                        data.append(contents[6])
+                        data.append(contents[7])
+                        datas.append(data)
+                    content = txt_file.readline()
                 mysql.insert_many(table_name, "`DATE`, `OPEN`, `TOP`, `LOW`, \
-                `CLOSE`, `VOL`, `TURN`", data)
+                `CLOSE`, `VOL`, `TURN`", datas)
             except IOError, e:
                 print "ERROR: " + e + "\tFile:" + stock_name
                 raise e

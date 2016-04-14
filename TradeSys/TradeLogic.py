@@ -21,7 +21,7 @@ def tradelogic_cycle():
     # TODO trade accuracy is 1 minute
     tradelogic_cycle.count += 1
     time_now = StartTime + datetime.timedelta(minutes=tradelogic_cycle.count)
-    log_trade.info("tradelogic %s" + str(time_now))
+    log_trade.info(str(time_now) + " | tradelogic %s" % tradelogic_cycle.count)
 tradelogic_cycle.count = 0
 
 

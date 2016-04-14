@@ -7,16 +7,11 @@ import datetime
 __author__ = 'ryan'
 
 if __name__ == '__main__':
-    now = back_get_timer_now()
-    print now
-    date = now + datetime.timedelta(days=-300)
+    tradelogic_cycle()
+    date = datetime.datetime.strptime("2015-05-04 09:35", "%Y-%m-%d %H:%M")
     print date
-    ret = tradesql_get_daily_close_price_by_date("sz000002", date)
+    ret = tradesql_get_minute_low_price_by_date("sh600000", date)
     print ret
-    # txt2db = TxtIn.TXT2DB()
+    # txt2db = TxtIn.TXT2DB("minute")
     # txt2db.daily2db_multi()
-    # file_log = Logger()
-    # log = file_log.get_logger("testlog", 1)
-    # log.info("test")
-    # log2 = file_log.get_logger("testlog2", 1)
-    # log2.info("test2")
+    # txt2db.minute2db_multi()
