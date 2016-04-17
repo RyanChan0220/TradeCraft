@@ -1,42 +1,49 @@
 __author__ = 'ryan'
 
 from TradeLogic import *
-from CraftSys.CraftEnv import START_MONEY
 import math
 from LogSys.log import Logger
 
 
 log_trade = Logger().get_logger("log_trade", 1)
 
-total_money = START_MONEY
 OrderType = {"Market": 0, "Limit": 1}
-StockAmount = {}
 
 
-def trade_get_now_money():
-    return total_money
+class TradeFuncGV(object):
+    Total_Money = 0
+    Rest_Money = 0
+    Stock_Amount = {}
+
+
+def trade_get_rest_money():
+    return TradeFuncGV.Rest_Money
+
+
+def trade_set_start_money(money):
+    TradeFuncGV.Total_Money = money
+    TradeFuncGV.Rest_Money = TradeFuncGV.Total_Money
 
 
 def trade_get_start_money():
-    return START_MONEY
+    return TradeFuncGV.Total_Money
 
 
 def trade_is_money_enough(need):
-    if need < total_money:
+    if need < TradeFuncGV.Total_Money:
         return True
     else:
         return False
 
 
 def trade_use_money(money):
-    global total_money
     if money > 0:
         if trade_is_money_enough(money) is True:
-            total_money -= money
+            TradeFuncGV.Total_Money -= money
         else:
             log_trade.info("use money: money is not enough!")
     else:
-        total_money -= money
+        TradeFuncGV.Total_Money -= money
 
 
 def trade_stockid2id(stock_id):
@@ -52,24 +59,23 @@ def trade_is_stock_id_valid(stock_id):
 
 
 def trade_change_stock_amount(stock_id, amount):
-    global StockAmount
-    if stock_id in StockAmount:
+    if stock_id in TradeFuncGV.Stock_Amount:
         if amount >= 0:
-            StockAmount[stock_id] += amount
+            TradeFuncGV.Stock_Amount[stock_id] += amount
         else:
-            if StockAmount[stock_id] > math.fabs(amount):
-                StockAmount[stock_id] += amount
+            if TradeFuncGV.Stock_Amount[stock_id] > math.fabs(amount):
+                TradeFuncGV.Stock_Amount[stock_id] += amount
             else:
-                rest_amount = StockAmount[stock_id]
-                StockAmount[stock_id] = 0
+                rest_amount = TradeFuncGV.Stock_Amount[stock_id]
+                TradeFuncGV.Stock_Amount[stock_id] = 0
                 log_trade.info("stock %s is not enough for selling, but sell all %d", stock_id, rest_amount)
                 return rest_amount
     else:
-        StockAmount[stock_id] = 0
+        TradeFuncGV.Stock_Amount[stock_id] = 0
         if amount >= 0:
-            StockAmount[stock_id] += amount
+            TradeFuncGV.Stock_Amount[stock_id] += amount
         else:
-            StockAmount[stock_id] = 0
+            TradeFuncGV.Stock_Amount[stock_id] = 0
             log_trade.error("amount must be positive because %s isn't exist", stock_id)
             return 0
     return amount
@@ -77,8 +83,8 @@ def trade_change_stock_amount(stock_id, amount):
 
 def trade_get_stock_amount(id):
     stock_id = trade_id2stockid(id)
-    if stock_id in StockAmount:
-        return StockAmount[stock_id]
+    if stock_id in TradeFuncGV.Stock_Amount:
+        return TradeFuncGV.Stock_Amount[stock_id]
     else:
         return 0
 

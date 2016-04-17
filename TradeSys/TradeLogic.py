@@ -7,54 +7,54 @@ import datetime
 import math
 
 OrderStatus = {"Empty": 0, "Deal": 1, "Submit": 2, "Cancel": 3}
-Orders = collections.OrderedDict()
 
 
-class GlobalVariables(object):
+class TradeLogicGV(object):
     Timer_Now = datetime.datetime.strptime("2007-01-01;09:30", "%Y-%d-%m;%H:%M")
     Cycle = 0
     Order_Count = 0
+    Orders = collections.OrderedDict()
 
 
 def tradelogic_set_now_time(now):
-    GlobalVariables.Timer_Now = now
+    TradeLogicGV.Timer_Now = now
 
 
 def tradelogic_cycle(now):
     #check orders
     tradelogic_set_now_time(now)
-    GlobalVariables.Cycle += 1
+    TradeLogicGV.Cycle += 1
     # time_now = StartTime + datetime.timedelta(minutes=tradelogic_cycle.count)
-    log_trade.info("tradelogic Cycle %s" % GlobalVariables.Cycle)
+    log_trade.info("tradelogic Cycle %s" % TradeLogicGV.Cycle)
 
 
 def tradelogic_get_order_status(order_id):
-    if order_id in Orders:
-        return Orders[order_id]
+    if order_id in TradeLogicGV.Orders:
+        return TradeLogicGV.Orders[order_id]
     else:
         return OrderStatus["Empty"]
 
 
 def tradelogic_set_order_status(order_id, status=OrderStatus["Empty"]):
-    if order_id in Orders:
-        Orders[order_id] = status
+    if order_id in TradeLogicGV.Orders:
+        TradeLogicGV.Orders[order_id] = status
     else:
         pass
 
 
 def __tradelogic_get_order_id__():
-    Orders[__tradelogic_get_order_id__.count] = OrderStatus["Empty"]
-    GlobalVariables.Order_Count += 1
+    TradeLogicGV.Orders[TradeLogicGV.Order_Count] = OrderStatus["Empty"]
+    TradeLogicGV.Order_Count += 1
     return __tradelogic_get_order_id__.count
 
 
 def tradelogic_get_price(stock_id):
-    price = tradesql_get_minute_open_price_by_date(stock_id, GlobalVariables.Timer_Now)
+    price = tradesql_get_minute_open_price_by_date(stock_id, TradeLogicGV.Timer_Now)
     return price
 
 
 def tradelogic_is_bargaining(stock_id):
-    trans_shares = tradesql_get_minute_amount_by_date(stock_id, GlobalVariables.Timer_Now)
+    trans_shares = tradesql_get_minute_amount_by_date(stock_id, TradeLogicGV.Timer_Now)
     if trans_shares > 1:
         return True
     else:
@@ -76,9 +76,9 @@ def tradelogic_transaction_submit(stock_id, amount, price):
     """the judgement of whether transaction is deal:
         condition1: submite price is between the top and the low price
         condition2: the amount is less than 10% of all 1 minute amount"""
-    top_price = tradesql_get_minute_top_price_by_date(stock_id, GlobalVariables.Timer_Now)
-    low_price = tradesql_get_minute_low_price_by_date(stock_id, GlobalVariables.Timer_Now)
-    minute_amount = tradesql_get_minute_amount_by_date(stock_id, GlobalVariables.Timer_Now)
+    top_price = tradesql_get_minute_top_price_by_date(stock_id, TradeLogicGV.Timer_Now)
+    low_price = tradesql_get_minute_low_price_by_date(stock_id, TradeLogicGV.Timer_Now)
+    minute_amount = tradesql_get_minute_amount_by_date(stock_id, TradeLogicGV.Timer_Now)
     if math.abs(amount) <= minute_amount*0.1:
         if (price > low_price) and (price < top_price):
             tradelogic_set_order_status(order_id, OrderStatus["Deal"])
