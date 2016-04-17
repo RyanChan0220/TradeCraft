@@ -1,7 +1,9 @@
 __author__ = 'ryan'
+
+from LogSys.log import Logger
 import datetime
-from TradeSys.TradeLogic import *
-from LogSys.log import *
+from TradeSys.TradeLogic import tradelogic_cycle
+
 
 log_backtest = Logger().get_logger("backtest", 1)
 
@@ -19,8 +21,11 @@ def back_get_timer_now():
 
 def back_timer_add():
     GlobalVariables.Test_Timer_Now = GlobalVariables.Test_Timer_Now + datetime.timedelta(minutes=1)
-    if GlobalVariables.Test_Timer_Now.hour >= 15:
-        GlobalVariables.Test_Timer_Now = GlobalVariables.Test_Timer_Now + datetime.timedelta(hours=18)
+    if GlobalVariables.Test_Timer_Now.hour >= 15 and GlobalVariables.Test_Timer_Now.minute > 00:
+        GlobalVariables.Test_Timer_Now = GlobalVariables.Test_Timer_Now + datetime.timedelta(hours=18, minutes=30)
+    elif (GlobalVariables.Test_Timer_Now.hour >= 11 and GlobalVariables.Test_Timer_Now.minute > 30) \
+            and (GlobalVariables.Test_Timer_Now.hour < 13):
+        GlobalVariables.Test_Timer_Now = GlobalVariables.Test_Timer_Now + datetime.timedelta(hours=1, minutes=29)
 
 
 def back_get_start_time():
@@ -32,14 +37,15 @@ def back_get_end_time():
 
 
 def back_test_cycle():
+    log_backtest.info("----------Cycle: %d------------Time: %s" % (GlobalVariables.Test_Cycle,
+                                                                   str(GlobalVariables.Test_Timer_Now)))
     back_timer_add()
     GlobalVariables.Test_Cycle += 1
-    log_backtest.info("----------Cycle: %d------------Time: %s" % (GlobalVariables.Test_Cycle,
-                                                                 str(GlobalVariables.Test_Timer_Now)))
+
 
 
 if __name__ == '__main__':
-    while GlobalVariables.Test_Timer_Now != GlobalVariables.Test_Timer_End:
+    while GlobalVariables.Test_Timer_Now <= GlobalVariables.Test_Timer_End:
+        tradelogic_cycle(GlobalVariables.Test_Timer_Now)
         back_test_cycle()
-        tradelogic_cycle()
     log_backtest.info("--------------BackTest End----------------")
