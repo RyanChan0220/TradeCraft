@@ -1,6 +1,6 @@
 __author__ = 'ryan'
 
-from TradeLogic import *
+from TradeSys.TradeLogic import *
 import math
 from LogSys.log import Logger
 
@@ -39,11 +39,11 @@ def trade_is_money_enough(need):
 def trade_use_money(money):
     if money > 0:
         if trade_is_money_enough(money) is True:
-            TradeFuncGV.Total_Money -= money
+            TradeFuncGV.Rest_Money -= money
         else:
-            log_trade.info("use money: money is not enough!")
+            log_tradelogic.info("use money: money is not enough!")
     else:
-        TradeFuncGV.Total_Money -= money
+        TradeFuncGV.Rest_Money -= money
 
 
 def trade_stockid2id(stock_id):
@@ -68,7 +68,7 @@ def trade_change_stock_amount(stock_id, amount):
             else:
                 rest_amount = TradeFuncGV.Stock_Amount[stock_id]
                 TradeFuncGV.Stock_Amount[stock_id] = 0
-                log_trade.info("stock %s is not enough for selling, but sell all %d", stock_id, rest_amount)
+                log_tradelogic.info("stock %s is not enough for selling, but sell all %d", stock_id, rest_amount)
                 return rest_amount
     else:
         TradeFuncGV.Stock_Amount[stock_id] = 0
@@ -76,7 +76,7 @@ def trade_change_stock_amount(stock_id, amount):
             TradeFuncGV.Stock_Amount[stock_id] += amount
         else:
             TradeFuncGV.Stock_Amount[stock_id] = 0
-            log_trade.error("amount must be positive because %s isn't exist", stock_id)
+            log_tradelogic.error("amount must be positive because %s isn't exist", stock_id)
             return 0
     return amount
 
@@ -93,14 +93,17 @@ def trade_order_shares(id, shares, style=OrderType["Market"], limit_price=0):
     stock_id = trade_id2stockid(id)
     #check id
     if trade_is_stock_id_valid(stock_id) is False:
-        log_trade.error("trade_order_shares: %s is not valid stock id", stock_id)
+        log_tradelogic.error("trade_order_shares: %s is not valid stock id", stock_id)
         return None
     #check amount
     if (shares % 100) != 0:
-        log_trade.error("trade_order_shares: %d is not valid amount", shares)
+        log_tradelogic.error("trade_order_shares: %d is not valid amount", shares)
         return None
     if style == OrderType["Market"]:
-        price = tradelogic_get_price(stock_id)
+        if tradelogic_is_bargaining(stock_id) is True:
+            price = tradelogic_get_price(stock_id)
+        else:
+            return None
     else:
         price = limit_price
     #check money
@@ -141,7 +144,7 @@ def trade_order_percent(id, percent, style=OrderType["Market"], limit_price=0):
         all_money = trade_get_start_money()
         order_id = trade_order_value(id, all_money*percent, style, limit_price)
     else:
-        log_trade.error("trade_order_percent: %d is out of range %s", percent, id)
+        log_tradelogic.error("trade_order_percent: %d is out of range %s", percent, id)
     return order_id
 
 
