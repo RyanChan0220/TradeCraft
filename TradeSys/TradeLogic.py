@@ -51,7 +51,10 @@ def __tradelogic_get_order_id__():
 
 
 def tradelogic_get_price(stock_id):
-    price = tradesql_get_minute_open_price_by_date(stock_id, TradeLogicGV.Timer_Now)
+    if tradelogic_is_bargaining(stock_id) is True:
+        price = tradesql_get_minute_open_price_by_date(stock_id, TradeLogicGV.Timer_Now)
+    else:
+        price = 0
     return price
 
 
