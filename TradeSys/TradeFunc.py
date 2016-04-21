@@ -30,7 +30,7 @@ def trade_get_start_money():
 
 
 def trade_is_money_enough(need):
-    if need < TradeFuncGV.Total_Money:
+    if need < TradeFuncGV.Rest_Money:
         return True
     else:
         return False
@@ -156,7 +156,7 @@ def trade_order_value(id, cash_amount, style=OrderType["Market"], limit_price=0)
 def trade_order_percent(id, percent, style=OrderType["Market"], limit_price=0):
     if -1 <= percent <= 1:
         all_money = trade_get_start_money()
-        return trade_order_value(id, all_money*percent, style, limit_price)
+        return trade_order_target_value(id, all_money*percent, style, limit_price)
     else:
         log_trade.error("trade_order_percent: %d is out of range %s", percent, id)
         return None
